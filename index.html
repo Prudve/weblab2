@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Connect | College Event Calendar</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Campus Connect</div>
+        <div id="auth-section">
+            <button id="login-trigger-btn" onclick="showLoginModal()">Club President Login</button>
+            <div id="admin-controls" class="hidden">
+                <span id="admin-msg"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div id="container">
+        <div id="calendar-header">
+            <div id="monthDisplay"></div>
+
+            <div class="jump-to-date">
+                <select id="jumpMonth"></select>
+                <select id="jumpYear"></select>
+                <button id="jumpButton" onclick="jumpToDate()">Go</button>
+            </div>
+
+            <div class="nav-buttons">
+                <button id="backButton">Previous</button>
+                <button id="nextButton">Next</button>
+            </div>
+        </div>
+
+        <div id="weekdays">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+
+        <div id="calendar"></div>
+    </div>
+
+    <div id="loginModal" class="modal">
+        <h2>Club President Login</h2>
+        <p style="font-size: 12px; color: #666;">Enter your assigned credentials</p>
+        
+        <select id="loginClub">
+            <option value="" disabled selected>Loading Clubs...</option>
+        </select>
+        
+        <input id="loginUser" placeholder="President Username" />
+        <input id="loginPass" type="password" placeholder="Password" />
+        <button class="action-btn" onclick="handleAuth()">Login</button>
+        <button class="close-btn" onclick="closeAllModals()">Cancel</button>
+    </div>
+
+    <div id="newEventModal" class="modal">
+        <h2 id="modalDateTitle">Events</h2>
+        <div id="existing-events-list"></div>
+
+        <div id="admin-only-form" class="hidden">
+    <hr>
+    <h3>Add New Event</h3>
+    <p id="posting-as" style="font-weight: bold; color: #3498db;"></p>
+    
+    <input id="eventTitleInput" placeholder="Event Name (e.g., Annual Fest)" />
+    <label style="font-size: 12px; color: #666;">Event Poster (Optional)</label>
+    <input type="file" id="eventImageInput" accept="image/*" />
+   <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+    <div style="flex: 1;">
+        <label style="font-size: 12px; color: #666;">Start Time</label>
+        <input type="time" id="startTimeInput" required>
+    </div>
+    <div style="flex: 1;">
+        <label style="font-size: 12px; color: #666;">End Time</label>
+        <input type="time" id="endTimeInput" required>
+    </div>
+</div>
+
+    <textarea id="eventDescInput" placeholder="Event Description..." style="width: 100%; height: 60px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ccc; padding: 10px; font-family: inherit;"></textarea>
+    <button class="action-btn success" onclick="saveEvent()">Save Event</button>
+</div>
+        
+        <button class="close-btn" onclick="closeAllModals()">Close</button>
+    </div>
+
+    <div id="modalBackdrop" onclick="closeAllModals()"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

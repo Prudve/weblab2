@@ -1,0 +1,113 @@
+:root {
+    --primary: #2c3e50;
+    --accent: #3498db;
+    --danger: #e74c3c;
+    --success: #27ae60;
+    --light: #f4f7f6;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background-color: var(--light);
+}
+
+header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 30px; background: var(--primary); color: white;
+}
+
+#container {
+    width: 95%; max-width: 1200px; margin: 30px auto;
+    background: white; padding: 20px; border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+#calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+#monthDisplay { font-size: 28px; font-weight: bold; color: var(--primary); }
+
+.nav-buttons button { padding: 8px 15px; cursor: pointer; background: var(--accent); color: white; border: none; border-radius: 5px; }
+
+#weekdays {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    background: #f0f0f0; font-weight: bold; text-align: center; padding: 10px 0;
+}
+
+#calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; border: 1px solid #ddd; }
+
+.day { min-height: 120px; background: white; padding: 10px; cursor: pointer; transition: 0.2s; position: relative; }
+.day:hover { background: #f9f9f9; }
+.padding { background: #eee; cursor: default; }
+
+/* Markers on the main calendar grid */
+.event-marker {
+    background-color: var(--accent);
+    color: white;
+    font-size: 10px;
+    padding: 2px 5px;
+    border-radius: 10px;
+    text-align: center;
+    margin-top: 5px;
+}
+
+/* Modals */
+.modal {
+    display: none; position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); background: white;
+    padding: 25px; width: 90%; max-width: 400px; border-radius: 10px; z-index: 100;
+    max-height: 80vh; overflow-y: auto;
+}
+
+#modalBackdrop {
+    display: none; position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 50;
+}
+
+input, select { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+
+.action-btn { width: 100%; padding: 10px; border: none; border-radius: 4px; cursor: pointer; background: var(--primary); color: white; font-weight: bold; }
+.action-btn.success { background: var(--success); }
+.close-btn { width: 100%; padding: 10px; margin-top: 10px; border: none; border-radius: 4px; cursor: pointer; background: #95a5a6; color: white; }
+
+/* Detailed view inside the modal list */
+.event-item-detailed {
+    background: #f8f9fa;
+    padding: 12px;
+    margin: 10px 0;
+    border-left: 5px solid var(--accent);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-radius: 0 4px 4px 0;
+}
+.event-time-tag {
+    display: inline-flex;
+    align-items: center;
+    background: #fff3e0; /* Soft orange for time */
+    color: #e65100;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    border: 1px solid #ffcc80;
+}
+
+/* Ensure time inputs look consistent */
+input[type="time"] {
+    cursor: pointer;
+    font-family: inherit;
+}
+.event-item-header { font-size: 1.1em; margin-bottom: 5px; color: var(--primary); }
+.event-item-desc { font-size: 0.9em; color: #555; line-height: 1.4; }
+
+.del-btn { background: var(--danger); color: white; border: none; padding: 5px 8px; cursor: pointer; border-radius: 3px; font-size: 11px; margin-left: 10px; }
+.hidden { display: none !important; }
+
+.jump-to-date { display: flex; gap: 10px; align-items: center; }
+.jump-to-date select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; background: white; cursor: pointer; width: auto; }
+
+#jumpButton { padding: 8px 15px; background-color: var(--primary); color: white; border: none; border-radius: 5px; cursor: pointer; }
+#jumpButton:hover { background-color: var(--accent); }
+
+.logout-btn { background: #444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-left: 10px;}
