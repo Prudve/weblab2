@@ -85,7 +85,7 @@ async function load() {
 
     const calendar = document.getElementById('calendar');
     calendar.innerHTML = ''; 
-
+       
     for(let i = 1; i <= paddingDays + daysInMonth; i++) {
         const daySquare = document.createElement('div');
         daySquare.classList.add('day');
@@ -131,20 +131,26 @@ function renderEventList(dayEvents) {
     list.innerHTML = dayEvents.length === 0 ? '<p>No events today.</p>' : '';
     
     dayEvents.forEach(e => {
+        // --- DEBUGGING LINE ---
+        // Right-click your page > Inspect > Console to see this output
+        console.log("Event Data received:", e); 
+
         const item = document.createElement('div');
         item.className = 'event-item-detailed';
         
-        // DEBUG: Uncomment the line below if buttons still don't show
-        // console.log("Event:", e.title, "ID:", e.id, "Club:", e.club_name, "User:", currentUser.clubName);
-
-        // Improved logic: Trim spaces and ensure both exist
         const canDelete = currentUser.isLoggedIn && 
                           e.club_name && 
                           currentUser.clubName &&
                           e.club_name.trim() === currentUser.clubName.trim();
         
-        const timeDisplay = e.start_time ? 
-            `<div class="event-time-tag">🕒 ${e.start_time} - ${e.end_time}</div>` : '';
+        // Use exact Supabase column names
+        const start = e.start_time; 
+        const end = e.end_time;
+        
+        // If the database has the data, this will show it
+        const timeDisplay = (start && end) ? 
+            `<div class="event-time-tag">🕒 ${start} - ${end}</div>` : 
+            `<div class="event-time-tag">🕒 Time: Contact Club</div>`;
         
         const imageTag = e.image_url ? 
             `<img src="${e.image_url}" style="width: 100%; border-radius: 8px; margin-bottom: 10px; display: block;">` : '';
@@ -154,7 +160,7 @@ function renderEventList(dayEvents) {
                 ${imageTag}
                 ${timeDisplay}
                 <div class="event-item-header"><strong>${e.club_name}</strong>: ${e.title}</div>
-                <div class="event-item-desc">${e.description || ''}</div>
+                <div class="event-item-desc">${e.description || 'No description provided.'}</div>
             </div>
             ${canDelete ? `<button class="del-btn" onclick="deleteEvent('${e.id}')">Delete</button>` : ''}
         `;
@@ -162,43 +168,80 @@ function renderEventList(dayEvents) {
     });
 }
 async function saveEvent() {
+    // 1. Get all the values from your HTML inputs
     const title = document.getElementById('eventTitleInput').value;
-    const imageFile = document.getElementById('eventImageInput').files[0];
+    const desc = document.getElementById('eventDescInput').value;
+    const rawStart = document.getElementById('startTimeInput').value; // Get raw 24hr time
+    const rawEnd = document.getElementById('endTimeInput').value;     // Get raw 24hr time
+    const imageInput = document.getElementById('eventImageInput');
+    const imageFile = imageInput.files[0];
+
+    // 2. Simple Validation: Don't save if basic info is missing
+    if (!title || !rawStart || !rawEnd) {
+        alert("Please provide a Title, Start Time, and End Time.");
+        return;
+    }
+
     let imageUrl = null;
 
-    // 1. Upload the image if one was selected
-    if (imageFile) {
-        const fileName = `${Date.now()}_${imageFile.name}`;
-        const { data, error: uploadError } = await _supabase.storage
-            .from('event-posters')
-            .upload(fileName, imageFile);
+    try {
+        // 3. Handle Image Upload (Optional)
+        if (imageFile) {
+            const fileName = `${Date.now()}_${imageFile.name.replace(/\s/g, '_')}`;
+            const { data: uploadData, error: uploadError } = await _supabase.storage
+                .from('event-posters')
+                .upload(fileName, imageFile);
 
-        if (uploadError) {
-            alert("Image upload failed!");
+            if (uploadError) {
+                alert("Image upload failed! Check your Storage Policies.");
+                return;
+            }
+
+            const { data: publicUrlData } = _supabase.storage
+                .from('event-posters')
+                .getPublicUrl(fileName);
+            
+            imageUrl = publicUrlData.publicUrl;
+        }
+
+        // 4. Convert the raw 24hr time (e.g., "14:30") to 12hr format (e.g., "2:30 PM")
+        const startTime12 = formatTo12Hour(rawStart);
+        const endTime12 = formatTo12Hour(rawEnd);
+
+        // 5. SAVE EVERYTHING to the 'events' table
+        const { error: dbError } = await _supabase
+            .from('events')
+            .insert([{ 
+                date: clickedDate, 
+                title: title, 
+                description: desc, 
+                start_time: startTime12, // These MUST match your Supabase column names
+                end_time: endTime12,     // These MUST match your Supabase column names
+                image_url: imageUrl,
+                club_name: currentUser.clubName 
+            }]);
+
+        if (dbError) {
+            alert("Database Error: " + dbError.message);
             return;
         }
 
-        // 2. Get the Public URL
-        const { data: publicUrlData } = _supabase.storage
-            .from('event-posters')
-            .getPublicUrl(fileName);
+        // 6. Success Cleanup
+        titleInput.value = '';
+        descInput.value = '';
+        startTimeInput.value = '';
+        endTimeInput.value = '';
+        imageInput.value = ''; 
         
-        imageUrl = publicUrlData.publicUrl;
-    }
+        closeAllModals();
+        load(); // Refresh the calendar UI
 
-    // 3. Save everything to the database
-    const { error } = await _supabase
-        .from('events')
-        .insert([{ 
-            title: title,
-            image_url: imageUrl, // Save the link here
-            club_name: currentUser.clubName,
-            date: clickedDate,
-            // ... (rest of your fields)
-        }]);
-    
-    // ... (rest of your cleanup logic)
+    } catch (err) {
+        console.error("Unexpected Error:", err);
+    }
 }
+
+// Helper function to handle the AM/PM conversion
 function formatTo12Hour(timeString) {
     if (!timeString) return '';
     let [hours, minutes] = timeString.split(':');
@@ -211,9 +254,7 @@ async function deleteEvent(id) {
     if (!confirm("Are you sure you want to permanently delete this event?")) return;
 
     try {
-        console.log("Starting deletion for event ID:", id);
-
-        // 1. Fetch the event first to get the image URL
+        // 1. Get the event details to find the image URL
         const { data: event, error: fetchError } = await _supabase
             .from('events')
             .select('image_url')
@@ -222,26 +263,28 @@ async function deleteEvent(id) {
 
         if (fetchError) throw fetchError;
 
-        // 2. If there's an image, delete it from Supabase Storage
+        // 2. Cleanup Storage (The Image)
         if (event && event.image_url) {
-            console.log("Deleting associated image...");
-            
-            // Extract the filename from the URL
-            // Example URL: .../storage/v1/object/public/event-posters/123_image.png
-            const urlParts = event.image_url.split('/');
-            const fileName = urlParts[urlParts.length - 1];
+            // This part is the most important:
+            // It splits the URL by '/' and takes the very last part (the filename)
+            const parts = event.image_url.split('/');
+            const fileName = parts.pop(); 
+
+            console.log("Attempting to delete image file:", fileName);
 
             const { error: storageError } = await _supabase.storage
                 .from('event-posters')
                 .remove([fileName]);
 
             if (storageError) {
-                console.warn("Could not delete image file, but continuing with data deletion:", storageError);
+                console.error("Storage cleanup failed:", storageError.message);
+                // We don't stop here, we still want to delete the text data
+            } else {
+                console.log("Image deleted from bucket successfully.");
             }
         }
 
-        // 3. Delete the row from the 'events' table
-        console.log("Deleting event record...");
+        // 3. Cleanup Database (The Text)
         const { error: dbError } = await _supabase
             .from('events')
             .delete()
@@ -249,15 +292,13 @@ async function deleteEvent(id) {
 
         if (dbError) throw dbError;
 
-        console.log("Deletion complete!");
-        
-        // 4. Refresh UI
+        // 4. Update UI
         closeAllModals();
-        load(); // Re-render the calendar
+        load(); 
+        alert("Event and image deleted successfully.");
 
     } catch (err) {
-        console.error("Deletion failed:", err);
-        alert("Error deleting event: " + err.message);
+        console.error("Deletion process failed:", err);
     }
 }
 
