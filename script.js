@@ -57,6 +57,8 @@ async function handleAuth() {
     } else {
         alert("Invalid login details.");
     }
+    // Inside handleAuth after successful login:
+localStorage.setItem('clubSession', JSON.stringify(currentUser));
 }
 
 function logout() {
@@ -220,6 +222,7 @@ async function saveEvent() {
                 image_url: imageUrl,
                 club_name: currentUser.clubName 
             }]);
+            
 
         if (dbError) {
             alert("Database Error: " + dbError.message);
@@ -236,8 +239,19 @@ async function saveEvent() {
         closeAllModals();
         load(); // Refresh the calendar UI
 
+
     } catch (err) {
         console.error("Unexpected Error:", err);
+    }
+    if (!error) {
+        // 1. Close the modal so the user sees the calendar again
+        closeAllModals(); 
+
+        // 2. Trigger the soft refresh
+        // This makes the new event appear instantly on the grid
+        await load(); 
+        
+        console.log("Calendar updated without page reload!");
     }
 }
 
@@ -341,4 +355,12 @@ document.getElementById('backButton').onclick = () => { nav--; load(); };
 document.getElementById('nextButton').onclick = () => { nav++; load(); };
 
 initJumpToDate();
+// Auto-login on page load if a session exists
+const session = localStorage.getItem('clubSession');
+if (session) {
+    currentUser = JSON.parse(session);
+    document.getElementById('login-trigger-btn').classList.add('hidden');
+    document.getElementById('admin-controls').classList.remove('hidden');
+    document.getElementById('admin-msg').innerText = `President: ${currentUser.userName}`;
+}
 load();
