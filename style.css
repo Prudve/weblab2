@@ -1,113 +1,381 @@
+/* --- 1. MODERN VARIABLES & BASE --- */
 :root {
-    --primary: #2c3e50;
-    --accent: #3498db;
-    --danger: #e74c3c;
-    --success: #27ae60;
-    --light: #f4f7f6;
+    --primary: rgba(56, 189, 248, 1);
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
+    --danger-bg: #fff1f2;
+    --danger-text: #e11d48;
+    --danger-hover: #be123c;
+    --success: #10b981;
+    --bg-main: #f8fafc;
+    --text-main: #334155;
+    --glass: rgba(255, 255, 255, 0.98);
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --radius: 12px;
 }
 
-body {
-    font-family: 'Segoe UI', sans-serif;
-    margin: 0;
-    background-color: var(--light);
+* {
+    box-sizing: border-box;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+body { 
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; 
+    margin: 0; 
+    background-color: #e0f2fe; 
+    color: var(--text-main);
+    line-height: 1.5;
+}
+
+/* --- 2. HEADER & LOGIN TRIGGER --- */
 header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 15px 30px; background: var(--primary); color: white;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    padding: 1rem 5%; 
+    background: var(--primary); 
+    color: white;
+    box-shadow: var(--shadow);
 }
 
+.logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #302a81;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); 
+    -webkit-background-clip: initial;
+    -webkit-text-fill-color: initial;
+    background: none;
+}
+
+#login-trigger-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #302a81;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+}
+
+#login-trigger-btn:hover {
+    background: white;
+    color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* --- 3. CALENDAR LAYOUT --- */
 #container {
-    width: 95%; max-width: 1200px; margin: 30px auto;
-    background: white; padding: 20px; border-radius: 10px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    width: 95%; 
+    max-width: 1300px; 
+    margin: 2rem auto;
 }
 
-#calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-#monthDisplay { font-size: 28px; font-weight: bold; color: var(--primary); }
+#calendar-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 1.5rem;
+    background: white;
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
 
-.nav-buttons button { padding: 8px 15px; cursor: pointer; background: var(--accent); color: white; border: none; border-radius: 5px; }
+#monthDisplay { 
+    font-size: 1.75rem; 
+    font-weight: 800; 
+    color: #302a81; 
+}
 
 #weekdays {
-    display: grid; grid-template-columns: repeat(7, 1fr);
-    background: #f0f0f0; font-weight: bold; text-align: center; padding: 10px 0;
+    display: grid; 
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center; 
+    padding: 1rem 0;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
 }
 
-#calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; border: 1px solid #ddd; }
-
-.day { min-height: 120px; background: white; padding: 10px; cursor: pointer; transition: 0.2s; position: relative; }
-.day:hover { background: #f9f9f9; }
-.padding { background: #eee; cursor: default; }
-
-/* Markers on the main calendar grid */
-.event-marker {
-    background-color: var(--accent);
-    color: white;
-    font-size: 10px;
-    padding: 2px 5px;
-    border-radius: 10px;
-    text-align: center;
-    margin-top: 5px;
+#calendar { 
+    display: grid; 
+    grid-template-columns: repeat(7, 1fr); 
+    gap: 12px; 
 }
 
-/* Modals */
-.modal {
-    display: none; position: fixed; top: 50%; left: 50%;
-    transform: translate(-50%, -50%); background: white;
-    padding: 25px; width: 90%; max-width: 400px; border-radius: 10px; z-index: 100;
-    max-height: 80vh; overflow-y: auto;
-}
-
-#modalBackdrop {
-    display: none; position: fixed; top: 0; left: 0;
-    width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 50;
-}
-
-input, select { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-
-.action-btn { width: 100%; padding: 10px; border: none; border-radius: 4px; cursor: pointer; background: var(--primary); color: white; font-weight: bold; }
-.action-btn.success { background: var(--success); }
-.close-btn { width: 100%; padding: 10px; margin-top: 10px; border: none; border-radius: 4px; cursor: pointer; background: #95a5a6; color: white; }
-
-/* Detailed view inside the modal list */
-.event-item-detailed {
-    background: #f8f9fa;
-    padding: 12px;
-    margin: 10px 0;
-    border-left: 5px solid var(--accent);
+/* --- 4. DAY CARDS (Conflict Resolved) --- */
+.day { 
+    min-height: 130px; 
+    background: white; 
+    padding: 12px; 
+    cursor: pointer; 
+    border-radius: var(--radius);
+    border: 1px solid #e2e8f0;
+    box-shadow: var(--shadow);
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    border-radius: 0 4px 4px 0;
-}
-.event-time-tag {
-    display: inline-flex;
-    align-items: center;
-    background: #fff3e0; /* Soft orange for time */
-    color: #e65100;
-    padding: 3px 8px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    border: 1px solid #ffcc80;
+    flex-direction: column;
 }
 
-/* Ensure time inputs look consistent */
-input[type="time"] {
-    cursor: pointer;
+/* Only lift and color border for real days */
+.day:not(.padding):hover { 
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+.day.padding { 
+    background: #f1f5f9; 
+    border: 1px dashed #cbd5e1;
+    box-shadow: none;
+    cursor: default;
+    transform: none !important;
+}
+
+/* --- 5. EVENT LABELS --- */
+.event-label {
+    font-size: 0.75rem;
+    padding: 6px 8px;
+    margin-top: 6px;
+    border-radius: 8px;
+    font-weight: 700;
+    border: 1px solid rgba(0, 0, 0, 0.05); 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    line-height: 1.2;
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis;
+}
+
+.event-label:hover {
+    transform: scale(1.02);
+    filter: brightness(95%);
+}
+
+.club-tag { 
+    font-weight: 800; 
+    font-size: 0.65rem; 
+    display: block; 
+    color: #475569;
+    text-transform: uppercase; 
+    margin-bottom: 2px;
+}
+
+/* --- 6. MODALS & FORMS --- */
+.modal {
+    display: none; 
+    position: fixed; 
+    top: 50%; 
+    left: 50%;
+    transform: translate(-50%, -50%); 
+    background: var(--glass);
+    padding: 2rem; 
+    width: 95%;            /* Slightly wider for mobile */
+    max-width: 500px;      /* Professional width */
+    border-radius: 20px; 
+    z-index: 100; 
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    backdrop-filter: blur(10px);
+
+    /* --- THE FIX --- */
+    max-height: 90vh;      /* Limits height to 90% of the screen */
+    overflow-y: auto;      /* Adds vertical scrollbar when needed */
+    scrollbar-width: thin; /* Makes scrollbar less bulky on Firefox */
+}
+#modalBackdrop {
+    display: none; 
+    position: fixed; 
+    top: 0; left: 0;
+    width: 100vw; height: 100vh; 
+    background: rgba(15, 23, 42, 0.6); 
+    backdrop-filter: blur(4px);
+    z-index: 50;
+}
+
+input, select { 
+    width: 100%; 
+    padding: 0.8rem; 
+    margin: 0.5rem 0 1rem 0; 
+    border: 1px solid #e2e8f0; 
+    border-radius: 10px; 
+    background: #f8fafc;
+}
+
+#eventDescInput {
+    width: 100%;
+    min-height: 100px;
+    padding: 0.8rem;
+    margin: 0.5rem 0 1rem 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
     font-family: inherit;
+    font-size: 0.95rem;
+    resize: vertical;
+    outline: none;
+    color: var(--text-main);
 }
-.event-item-header { font-size: 1.1em; margin-bottom: 5px; color: var(--primary); }
-.event-item-desc { font-size: 0.9em; color: #555; line-height: 1.4; }
 
-.del-btn { background: var(--danger); color: white; border: none; padding: 5px 8px; cursor: pointer; border-radius: 3px; font-size: 11px; margin-left: 10px; }
+#eventDescInput:focus {
+    border-color: var(--accent);
+    background: white;
+}
+
+/* --- 7. BUTTONS --- */
+.action-btn, .close-btn { 
+    width: 100%; 
+    padding: 12px; 
+    border: none; 
+    border-radius: 10px; 
+    font-weight: 700; 
+    font-size: 0.9rem; /* Synchronized Font Size */
+    cursor: pointer;
+    transition: all 0.2s ease; /* Smooth transition for hover */
+    display: block;
+    text-align: center;
+}
+
+/* Login Button Specific */
+.action-btn { 
+    background: linear-gradient(135deg, var(--accent), #4f46e5); 
+    color: white; 
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+}
+
+.action-btn:hover {
+    filter: brightness(1.1); /* Adds a subtle glow effect */
+    transform: translateY(-2px); /* Lifts the button slightly */
+    box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
+}
+
+.action-btn.success { 
+    background: linear-gradient(135deg, var(--success), #059669); 
+}
+
+/* Cancel Button Specific */
+.close-btn { 
+    background: #d92424; 
+    color: white; 
+    margin-top: 10px;
+}
+
+.close-btn:hover { 
+    background: #ff0000;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 0, 0, 0.3);
+}
+
+.del-btn { 
+    background: var(--danger-bg); 
+    color: var(--danger-text); 
+    border: 1px solid #fecdd3; 
+    padding: 6px 14px; 
+    cursor: pointer; 
+    border-radius: 8px; 
+    font-weight: 700;
+}
+
+.del-btn:hover { 
+    background: var(--danger-hover); 
+    color: white;
+}
+
+/* --- 8. EVENT LIST ITEMS --- */
+.event-item {
+    background: white; 
+    padding: 1rem; 
+    margin: 0.8rem 0;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+
+.event-description-text {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* --- 9. JUMP TO DATE & NAVIGATION --- */
+#jump-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+#jump-controls select {
+    flex: 1;
+    background-color: #f8fafc;
+    margin: 0;
+}
+
+#jump-controls button {
+    flex: 0 0 auto;
+    padding: 10px 25px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.nav-buttons button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0;
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+#nextButton {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.5' stroke='%231e293b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M8.25 4.5l7.5 7.5-7.5 7.5' /%3E%3C/svg%3E");
+}
+
+#backButton {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.5' stroke='%231e293b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M15.75 19.5L8.25 12l7.5-7.5' /%3E%3C/svg%3E");
+}
+
+/* --- 10. UTILITIES --- */
 .hidden { display: none !important; }
 
-.jump-to-date { display: flex; gap: 10px; align-items: center; }
-.jump-to-date select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; background: white; cursor: pointer; width: auto; }
+.logout-btn { 
+    background: rgba(255,255,255,0.1); 
+    color: white; 
+    border: 1px solid rgba(255,255,255,0.2); 
+    padding: 6px 14px; 
+    border-radius: 8px; 
+    cursor: pointer;
+    font-weight: 600;
+}
 
-#jumpButton { padding: 8px 15px; background-color: var(--primary); color: white; border: none; border-radius: 5px; cursor: pointer; }
-#jumpButton:hover { background-color: var(--accent); }
+.logout-btn:hover { 
+    background: #d92424; 
+}
 
-.logout-btn { background: #444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-left: 10px;}
+@media (max-width: 850px) {
+    #calendar { gap: 6px; }
+    .day { min-height: 90px; padding: 6px; }
+}
