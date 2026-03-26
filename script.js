@@ -1,4 +1,3 @@
-// --- THEME TOGGLE LOGIC ---
 function initTheme() {
     const savedTheme = localStorage.getItem('appTheme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
