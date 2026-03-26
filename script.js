@@ -19,7 +19,6 @@ function updateThemeIcon(theme) {
 
 initTheme(); // Run on load
 
-// --- 1. SUPABASE CONFIG ---
 const SUPABASE_URL = 'https://exkcygcpzoubwhrrdfll.supabase.co'; 
 const SUPABASE_KEY = 'sb_publishable_54di3nOCy1qBeXV08fNFMA_qMrc1K3l'; 
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
