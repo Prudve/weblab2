@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,15 +7,18 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
 
+<body>
     <header>
         <div class="logo">Event Noter</div>
-        <div id="auth-section">
-            <button id="login-trigger-btn" onclick="showLoginModal()">Club President Login</button>
-            <div id="admin-controls" class="hidden">
-                <span id="admin-msg"></span>
-                <button class="logout-btn" onclick="logout()">Logout</button>
+        <div class="header-right">
+            <button id="theme-toggle" onclick="toggleTheme()" class="theme-btn" title="Toggle Theme">🌙</button>
+            <div id="auth-section">
+                <button id="login-trigger-btn" onclick="showLoginModal()">Club President Login</button>
+                <div id="admin-controls" class="hidden">
+                    <span id="admin-msg"></span>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
             </div>
         </div>
     </header>
@@ -25,7 +27,7 @@
         <div id="calendar-header">
             <div id="monthDisplay"></div>
 
-            <div class="jump-to-date">
+            <div class="jump-to-date jump-controls">
                 <select id="jumpMonth"></select>
                 <select id="jumpYear"></select>
                 <button id="jumpButton" onclick="jumpToDate()">Go</button>
