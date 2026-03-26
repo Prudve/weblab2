@@ -1,21 +1,42 @@
+// --- THEME TOGGLE LOGIC ---
+function initTheme() {
+    const savedTheme = localStorage.getItem('appTheme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('appTheme', newTheme);
+    updateThemeIcon(newTheme);
+}
+
+function updateThemeIcon(theme) {
+    const btn = document.getElementById('theme-toggle');
+    if(btn) btn.innerText = theme === 'dark' ? '☀️' : '🌙';
+}
+
+initTheme(); // Run on load
+
 // --- 1. SUPABASE CONFIG ---
-const SUPABASE_URL = 'https://exkcygcpzoubwhrrdfll.supabase.co'; // Replace with yours
-const SUPABASE_KEY = 'sb_publishable_54di3nOCy1qBeXV08fNFMA_qMrc1K3l'; // Replace with yours
+const SUPABASE_URL = 'https://exkcygcpzoubwhrrdfll.supabase.co'; 
+const SUPABASE_KEY = 'sb_publishable_54di3nOCy1qBeXV08fNFMA_qMrc1K3l'; 
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- 2. STATE ---
 let nav = 0;
 let clickedDate = null;
-let currentUser = { isLoggedIn: false, clubName: '', userName: '' };
+let editingEventId = null; 
+let currentUser = { isLoggedIn: false, clubName: '', userName: '', color: '#3498db' };
 const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 // --- 3. DYNAMIC CLUB LIST ---
 async function fetchClubsIntoDropdown() {
     const dropdown = document.getElementById('loginClub');
     dropdown.innerHTML = '<option value="" disabled selected>Select Your Club</option>';
-    
-    const { data: users, error } = await _supabase.from('users').select('club_name');
-
+    const { data: users } = await _supabase.from('users').select('club_name');
     if (users) {
         const uniqueClubs = [...new Set(users.map(u => u.club_name))];
         uniqueClubs.forEach(clubName => {
@@ -39,30 +60,35 @@ async function handleAuth() {
     const user = document.getElementById('loginUser').value.trim();
     const pass = document.getElementById('loginPass').value;
 
-    const { data, error } = await _supabase
+    const { data } = await _supabase
         .from('users')
-        .select('*')
+        .select('club_name, username, password, club_color')
         .eq('club_name', club)
         .eq('username', user)
         .eq('password', pass)
         .maybeSingle();
 
     if (data) {
-        currentUser = { isLoggedIn: true, clubName: club, userName: user };
+        currentUser = { 
+            isLoggedIn: true, 
+            clubName: club, 
+            userName: user, 
+            color: data.club_color || '#3498db' 
+        };
         document.getElementById('login-trigger-btn').classList.add('hidden');
         document.getElementById('admin-controls').classList.remove('hidden');
         document.getElementById('admin-msg').innerText = `${user} (${club})`;
+        localStorage.setItem('clubSession', JSON.stringify(currentUser));
         closeAllModals();
         load();
     } else {
         alert("Invalid login details.");
     }
-    // Inside handleAuth after successful login:
-localStorage.setItem('clubSession', JSON.stringify(currentUser));
 }
 
 function logout() {
-    currentUser = { isLoggedIn: false, clubName: '', userName: '' };
+    localStorage.removeItem('clubSession');
+    currentUser = { isLoggedIn: false, clubName: '', userName: '', color: '#3498db' };
     document.getElementById('login-trigger-btn').classList.remove('hidden');
     document.getElementById('admin-controls').classList.add('hidden');
     load();
@@ -84,10 +110,9 @@ async function load() {
         `${dt.toLocaleDateString('en-us', { month: 'long' })} ${year}`;
 
     const { data: allEvents } = await _supabase.from('events').select('*');
-
     const calendar = document.getElementById('calendar');
     calendar.innerHTML = ''; 
-       
+        
     for(let i = 1; i <= paddingDays + daysInMonth; i++) {
         const daySquare = document.createElement('div');
         daySquare.classList.add('day');
@@ -113,12 +138,14 @@ async function load() {
 
 function openModal(date, dayEvents) {
     clickedDate = date;
+    editingEventId = null; 
     document.getElementById('modalDateTitle').innerText = `Events: ${date}`;
     const adminForm = document.getElementById('admin-only-form');
     
     if (currentUser.isLoggedIn) {
         adminForm.classList.remove('hidden');
         document.getElementById('posting-as').innerText = `Posting as: ${currentUser.clubName}`;
+        document.querySelector('#admin-only-form .success').innerText = "Save Event";
     } else {
         adminForm.classList.add('hidden');
     }
@@ -133,204 +160,144 @@ function renderEventList(dayEvents) {
     list.innerHTML = dayEvents.length === 0 ? '<p>No events today.</p>' : '';
     
     dayEvents.forEach(e => {
-        // --- DEBUGGING LINE ---
-        // Right-click your page > Inspect > Console to see this output
-        console.log("Event Data received:", e); 
-
+        const active = isEventActive(e.date, e.end_time);
         const item = document.createElement('div');
         item.className = 'event-item-detailed';
+        if (!active) item.style.opacity = "0.7";
+
+        const isOwner = currentUser.isLoggedIn && 
+                        e.club_name && 
+                        currentUser.clubName &&
+                        e.club_name.trim() === currentUser.clubName.trim();
         
-        const canDelete = currentUser.isLoggedIn && 
-                          e.club_name && 
-                          currentUser.clubName &&
-                          e.club_name.trim() === currentUser.clubName.trim();
-        
-        // Use exact Supabase column names
-        const start = e.start_time; 
-        const end = e.end_time;
-        
-        // If the database has the data, this will show it
-        const timeDisplay = (start && end) ? 
-            `<div class="event-time-tag">🕒 ${start} - ${end}</div>` : 
-            `<div class="event-time-tag">🕒 Time: Contact Club</div>`;
-        
-        const imageTag = e.image_url ? 
-            `<img src="${e.image_url}" style="width: 100%; border-radius: 8px; margin-bottom: 10px; display: block;">` : '';
+        const statusBadge = active 
+            ? `<span style="color: #27ae60; font-size: 11px; font-weight: bold; margin-bottom: 5px; display: block;">● Available</span>` 
+            : `<span style="color: #e74c3c; font-size: 11px; font-weight: bold; margin-bottom: 5px; display: block;">● Expired</span>`;
+
+        const eventColor = e.club_color || '#3498db';
+        const timeDisplay = `<div class="event-time-tag">🕒 ${e.start_time || ''} - ${e.end_time || ''}</div>`;
+        const imageTag = e.image_url ? `<img src="${e.image_url}" style="width: 100%; border-radius: 8px; margin-bottom: 10px; display: block;">` : '';
 
         item.innerHTML = `
             <div style="flex-grow: 1;">
+                ${statusBadge}
                 ${imageTag}
                 ${timeDisplay}
-                <div class="event-item-header"><strong>${e.club_name}</strong>: ${e.title}</div>
+                <div class="event-item-header"><strong style="color: ${eventColor};">${e.club_name}</strong>: ${e.title}</div>
                 <div class="event-item-desc">${e.description || 'No description provided.'}</div>
             </div>
-            ${canDelete ? `<button class="del-btn" onclick="deleteEvent('${e.id}')">Delete</button>` : ''}
+            ${isOwner ? `
+                <div style="display: flex; flex-direction: column; gap: 5px; margin-left: 10px;">
+                    <button class="edit-btn" onclick="prepareEdit('${e.id}', '${e.title.replace(/'/g, "\\'")}', '${e.description ? e.description.replace(/'/g, "\\'") : ''}')">Edit</button>
+                    <button class="del-btn" onclick="deleteEvent('${e.id}')">Delete</button>
+                </div>
+            ` : ''}
         `;
         list.appendChild(item);
     });
 }
+
+function isEventActive(eventDateStr, endTimeStr) {
+    if (!eventDateStr || !endTimeStr) return true;
+    const now = new Date();
+    const [month, day, year] = eventDateStr.split('/').map(Number);
+    const eventDate = new Date(year, month - 1, day);
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    if (eventDate < todayDate) return false; 
+    if (eventDate > todayDate) return true;  
+
+    const [time, modifier] = endTimeStr.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    if (modifier === 'PM' && hours < 12) hours += 12;
+    if (modifier === 'AM' && hours === 12) hours = 0;
+    const endDateTime = new Date(year, month - 1, day, hours, minutes);
+    return now < endDateTime;
+}
+
+function prepareEdit(id, title, desc) {
+    editingEventId = id;
+    document.getElementById('eventTitleInput').value = title;
+    document.getElementById('eventDescInput').value = desc;
+    const saveBtn = document.querySelector('#admin-only-form .success');
+    saveBtn.innerText = "Update Event Info";
+    saveBtn.scrollIntoView({ behavior: 'smooth' });
+}
+
 async function saveEvent() {
-    // 1. Get all the values from your HTML inputs
     const title = document.getElementById('eventTitleInput').value;
     const desc = document.getElementById('eventDescInput').value;
-    const rawStart = document.getElementById('startTimeInput').value; // Get raw 24hr time
-    const rawEnd = document.getElementById('endTimeInput').value;     // Get raw 24hr time
+    const rawStart = document.getElementById('startTimeInput').value;
+    const rawEnd = document.getElementById('endTimeInput').value;
     const imageInput = document.getElementById('eventImageInput');
     const imageFile = imageInput.files[0];
 
-    // 2. Simple Validation: Don't save if basic info is missing
-    if (!title || !rawStart || !rawEnd) {
-        alert("Please provide a Title, Start Time, and End Time.");
-        return;
-    }
+    if (!title) { alert("Please provide at least an Event Title."); return; }
 
     let imageUrl = null;
-
     try {
-        // 3. Handle Image Upload (Optional)
         if (imageFile) {
             const fileName = `${Date.now()}_${imageFile.name.replace(/\s/g, '_')}`;
-            const { data: uploadData, error: uploadError } = await _supabase.storage
-                .from('event-posters')
-                .upload(fileName, imageFile);
-
-            if (uploadError) {
-                alert("Image upload failed! Check your Storage Policies.");
-                return;
+            const { data: uploadData, error: uploadError } = await _supabase.storage.from('event-posters').upload(fileName, imageFile);
+            if (!uploadError) {
+                const { data: publicUrlData } = _supabase.storage.from('event-posters').getPublicUrl(fileName);
+                imageUrl = publicUrlData.publicUrl;
             }
-
-            const { data: publicUrlData } = _supabase.storage
-                .from('event-posters')
-                .getPublicUrl(fileName);
-            
-            imageUrl = publicUrlData.publicUrl;
         }
 
-        // 4. Convert the raw 24hr time (e.g., "14:30") to 12hr format (e.g., "2:30 PM")
-        const startTime12 = formatTo12Hour(rawStart);
-        const endTime12 = formatTo12Hour(rawEnd);
+        const eventData = {
+            title: title,
+            description: desc,
+            club_name: currentUser.clubName,
+            club_color: currentUser.color,
+            date: clickedDate
+        };
 
-        // 5. SAVE EVERYTHING to the 'events' table
-        const { error: dbError } = await _supabase
-            .from('events')
-            .insert([{ 
-                date: clickedDate, 
-                title: title, 
-                description: desc, 
-                start_time: startTime12, // These MUST match your Supabase column names
-                end_time: endTime12,     // These MUST match your Supabase column names
-                image_url: imageUrl,
-                club_name: currentUser.clubName 
-            }]);
-            
+        if (rawStart) eventData.start_time = formatTo12Hour(rawStart);
+        if (rawEnd) eventData.end_time = formatTo12Hour(rawEnd);
+        if (imageUrl) eventData.image_url = imageUrl;
 
-        if (dbError) {
-            alert("Database Error: " + dbError.message);
-            return;
+        let error;
+        if (editingEventId) {
+            const { error: updateError } = await _supabase.from('events').update(eventData).eq('id', editingEventId);
+            error = updateError;
+        } else {
+            const { error: insertError } = await _supabase.from('events').insert([eventData]);
+            error = insertError;
         }
 
-        // 6. Success Cleanup
-        titleInput.value = '';
-        descInput.value = '';
-        startTimeInput.value = '';
-        endTimeInput.value = '';
-        imageInput.value = ''; 
-        
+        if (error) throw error;
         closeAllModals();
-        load(); // Refresh the calendar UI
-
-
-    } catch (err) {
-        console.error("Unexpected Error:", err);
-    }
-    if (!error) {
-        // 1. Close the modal so the user sees the calendar again
-        closeAllModals(); 
-
-        // 2. Trigger the soft refresh
-        // This makes the new event appear instantly on the grid
-        await load(); 
-        
-        console.log("Calendar updated without page reload!");
-    }
+        load(); 
+    } catch (err) { alert("Error saving event: " + err.message); }
 }
 
-// Helper function to handle the AM/PM conversion
 function formatTo12Hour(timeString) {
     if (!timeString) return '';
     let [hours, minutes] = timeString.split(':');
     let ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12; // the hour '0' should be '12'
+    hours = hours % 12 || 12;
     return `${hours}:${minutes} ${ampm}`;
 }
+
 async function deleteEvent(id) {
-    if (!confirm("Are you sure you want to permanently delete this event?")) return;
-
-    try {
-        // 1. Get the event details to find the image URL
-        const { data: event, error: fetchError } = await _supabase
-            .from('events')
-            .select('image_url')
-            .eq('id', id)
-            .single();
-
-        if (fetchError) throw fetchError;
-
-        // 2. Cleanup Storage (The Image)
-        if (event && event.image_url) {
-            // This part is the most important:
-            // It splits the URL by '/' and takes the very last part (the filename)
-            const parts = event.image_url.split('/');
-            const fileName = parts.pop(); 
-
-            console.log("Attempting to delete image file:", fileName);
-
-            const { error: storageError } = await _supabase.storage
-                .from('event-posters')
-                .remove([fileName]);
-
-            if (storageError) {
-                console.error("Storage cleanup failed:", storageError.message);
-                // We don't stop here, we still want to delete the text data
-            } else {
-                console.log("Image deleted from bucket successfully.");
-            }
-        }
-
-        // 3. Cleanup Database (The Text)
-        const { error: dbError } = await _supabase
-            .from('events')
-            .delete()
-            .eq('id', id);
-
-        if (dbError) throw dbError;
-
-        // 4. Update UI
-        closeAllModals();
-        load(); 
-        alert("Event and image deleted successfully.");
-
-    } catch (err) {
-        console.error("Deletion process failed:", err);
-    }
+    if (!confirm("Are you sure?")) return;
+    const { error } = await _supabase.from('events').delete().eq('id', id);
+    if (!error) { closeAllModals(); load(); }
 }
 
-// --- 6. DATE JUMP ---
 function initJumpToDate() {
     const m = document.getElementById('jumpMonth');
     const y = document.getElementById('jumpYear');
     const currentYear = new Date().getFullYear();
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-    
     months.forEach((name, i) => {
         let opt = document.createElement('option');
         opt.value = i; opt.innerText = name;
         if (i === new Date().getMonth()) opt.selected = true;
         m.appendChild(opt);
     });
-
-    for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+    for (let i = currentYear - 2; i <= currentYear + 3; i++) {
         let opt = document.createElement('option');
         opt.value = i; opt.innerText = i;
         if (i === currentYear) opt.selected = true;
@@ -347,20 +314,25 @@ function jumpToDate() {
 }
 
 function closeAllModals() {
+    editingEventId = null;
     document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     document.getElementById('modalBackdrop').style.display = 'none';
+    document.getElementById('eventTitleInput').value = '';
+    document.getElementById('eventDescInput').value = '';
+    document.getElementById('startTimeInput').value = '';
+    document.getElementById('endTimeInput').value = '';
+    document.getElementById('eventImageInput').value = '';
 }
 
 document.getElementById('backButton').onclick = () => { nav--; load(); };
 document.getElementById('nextButton').onclick = () => { nav++; load(); };
 
 initJumpToDate();
-// Auto-login on page load if a session exists
 const session = localStorage.getItem('clubSession');
 if (session) {
     currentUser = JSON.parse(session);
     document.getElementById('login-trigger-btn').classList.add('hidden');
     document.getElementById('admin-controls').classList.remove('hidden');
-    document.getElementById('admin-msg').innerText = `President: ${currentUser.userName}`;
+    document.getElementById('admin-msg').innerText = `${currentUser.userName} (${currentUser.clubName})`;
 }
 load();
